@@ -53,7 +53,7 @@ export default function Home() {
   const [darkMode, setDarkMode] = useState(false)
   const [availableLanguages, setAvailableLanguages] = useState<AvailableLanguage[]>([])
   const [loadingLanguages, setLoadingLanguages] = useState(false)
-  const [hasAutoDownloaded, setHasAutoDownloaded] = useState(false)
+
   const textareaRef = useRef<HTMLTextAreaElement>(null)
 
   // Handle dark mode
@@ -83,32 +83,7 @@ export default function Home() {
     }
   }, [state, transcript])
 
-  // Auto-download when transcript is successfully fetched (only once per video)
-  useEffect(() => {
-    if (state === 'success' && transcript.length > 0 && !hasAutoDownloaded) {
-      // Log transcript to console
-      console.log('✅ Transcript loaded successfully!')
-      console.log('📊 Transcript Info:', {
-        videoId,
-        language,
-        format,
-        totalSegments: transcript.length,
-        totalDuration: transcript.reduce((sum, item) => sum + item.duration, 0).toFixed(2) + 's',
-      })
-      console.log('📝 Full Transcript (Text Format):', formatAsText(transcript))
-      console.log('📄 Full Transcript Data:', transcript)
-      
-      // Delay download slightly to let user see the transcript first
-      const timer = setTimeout(() => {
-        handleDownload()
-        setHasAutoDownloaded(true)
-        console.log('💾 Auto-download completed!')
-      }, 1500) // 1.5 second delay
 
-      return () => clearTimeout(timer)
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [state, transcript, hasAutoDownloaded])
 
   // Track if we should auto-fetch transcript after language selection
   const [shouldAutoFetch, setShouldAutoFetch] = useState(false)
@@ -139,14 +114,14 @@ export default function Home() {
       const data = await response.json()
       setTranscript(data.transcript)
       setState('success')
-      
+
       // Log transcript to console
       console.log('📝 Transcript fetched successfully!')
       console.log('Video ID:', id)
       console.log('Language:', language)
       console.log('Total segments:', data.transcript.length)
       console.log('--- Transcript Content ---')
-      
+
       // Log formatted transcript based on current format
       const formattedText = formatAsText(data.transcript)
       console.log('Text format:', formattedText)
@@ -167,15 +142,15 @@ export default function Home() {
       if (response.ok) {
         const data = await response.json()
         const languages = data.languages || []
-        
+
         // Remove duplicates by languageCode
         const uniqueLanguages = languages.filter(
           (lang: AvailableLanguage, index: number, self: AvailableLanguage[]) =>
             index === self.findIndex((l) => l.languageCode === lang.languageCode)
         )
-        
+
         setAvailableLanguages(uniqueLanguages)
-        
+
         // Auto-select first available language if current language is not available
         if (uniqueLanguages.length > 0) {
           const currentLangAvailable = uniqueLanguages.some(
@@ -222,17 +197,16 @@ export default function Home() {
 
     // Reset auto-download flag when fetching new video
     if (videoId !== extractedVideoId) {
-      setHasAutoDownloaded(false)
       setTranscript([]) // Clear previous transcript
       setState('empty') // Reset to empty state
       setAvailableLanguages([]) // Clear previous languages
     }
 
     setVideoId(extractedVideoId)
-    
+
     // Fetch available languages first (don't fetch transcript yet)
     await fetchAvailableLanguages(extractedVideoId)
-    
+
     // Don't auto-fetch transcript - user will select language and click "Get Transcript" again
   }
 
@@ -582,14 +556,10 @@ export default function Home() {
                     variant="outline"
                     size="sm"
                     onClick={handleDownload}
-                    className={`gap-2 ${
-                      hasAutoDownloaded
-                        ? 'bg-green-50 dark:bg-green-900/20 border-green-200 dark:border-green-800 hover:bg-green-100 dark:hover:bg-green-900/30'
-                        : ''
-                    }`}
+                    className="gap-2"
                   >
                     <Download className="h-4 w-4" />
-                    {hasAutoDownloaded ? 'Download Again' : 'Download'}
+                    Download
                   </Button>
                 </div>
               </div>

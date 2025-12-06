@@ -92,16 +92,16 @@ export async function GET(request: NextRequest) {
     try {
       // Use YouTube Data API v3 to fetch available captions
       const apiKey = process.env.YOUTUBE_API_KEY
-      
+
       if (!apiKey) {
         // Fallback: Try to fetch from YouTube page directly
         return await fetchLanguagesFromPage(videoId)
       }
 
       const apiUrl = `https://www.googleapis.com/youtube/v3/captions?part=snippet&videoId=${videoId}&key=${apiKey}`
-      
+
       const response = await fetch(apiUrl)
-      
+
       if (!response.ok) {
         // If API fails, try fallback method
         return await fetchLanguagesFromPage(videoId)
@@ -110,10 +110,8 @@ export async function GET(request: NextRequest) {
       const data = await response.json()
 
       if (!data.items || data.items.length === 0) {
-        return NextResponse.json<LanguagesError>(
-          { error: 'No captions available for this video' },
-          { status: 404 }
-        )
+        // If API returns no items, try fallback method
+        return await fetchLanguagesFromPage(videoId)
       }
 
       // Transform API response
@@ -140,7 +138,7 @@ export async function GET(request: NextRequest) {
       return NextResponse.json(result, { status: 200 })
     } catch (error: any) {
       console.error('Error fetching languages:', error)
-      
+
       // Try fallback method
       try {
         return await fetchLanguagesFromPage(videoId)
@@ -227,7 +225,7 @@ async function fetchLanguagesFromPage(videoId: string): Promise<NextResponse> {
     )
   } catch (error) {
     console.error('Error fetching languages from page:', error)
-    
+
     // Return common languages as fallback
     const commonLanguages = ['en', 'th', 'es', 'fr', 'de', 'ja', 'ko', 'zh']
     const languages: LanguageInfo[] = commonLanguages.map((code) => ({

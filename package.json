@@ -22,7 +22,9 @@
     "react-dom": "^18.3.0",
     "tailwind-merge": "^2.3.0",
     "tailwindcss-animate": "^1.0.7",
-    "youtube-transcript": "^1.2.1"
+    "youtube-dl-exec": "^3.0.27",
+    "youtube-transcript": "^1.2.1",
+    "youtubei.js": "^16.0.1"
   },
   "devDependencies": {
     "@types/node": "^20",
