@@ -1,6 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server'
+import path from 'path'
+
+export const dynamic = 'force-dynamic'
+
 import { create } from 'youtube-dl-exec'
-const youtubedl = create('/home/buggy/.local/bin/yt-dlp')
+const youtubedl = create(path.join(process.cwd(), 'bin', 'yt-dlp'))
 import { TranscriptResponse, TranscriptError } from '@/lib/types'
 
 export async function GET(request: NextRequest) {
