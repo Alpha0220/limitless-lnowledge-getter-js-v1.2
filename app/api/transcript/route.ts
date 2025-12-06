@@ -1,6 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server'
+import path from 'path'
+import fs from 'fs'
+import os from 'os'
+
+export const dynamic = 'force-dynamic'
+
 import { create } from 'youtube-dl-exec'
-const youtubedl = create('/home/buggy/.local/bin/yt-dlp')
+const youtubedl = create(path.join(process.cwd(), 'bin', 'yt-dlp'))
 import { TranscriptResponse, TranscriptError } from '@/lib/types'
 
 export async function GET(request: NextRequest) {
@@ -20,30 +26,63 @@ export async function GET(request: NextRequest) {
     // Validate video ID format (should be 11 characters)
     if (videoId.length !== 11) {
       return NextResponse.json<TranscriptError>(
-        { error: 'Invalid YouTube video ID' },
+        { error: 'Invalid Video ID format' },
         { status: 400 }
       )
     }
 
     try {
-      console.log(`📋 Fetching transcript for videoId: ${videoId}, language: ${lang} using yt-dlp`)
+      console.log(`Fetching transcript for videoId: ${videoId}, language: ${lang} using yt-dlp`)
+
+      // Handle cookies from environment variable
+      let cookiePath: string | undefined = undefined
+      const cookiesContent = process.env.YOUTUBE_COOKIES
+
+      if (cookiesContent) {
+        const tempDir = os.tmpdir()
+        cookiePath = path.join(tempDir, `youtube_cookies_${Date.now()}.txt`)
+        fs.writeFileSync(cookiePath, cookiesContent)
+        console.log('Using cookies from environment variable')
+      } else {
+        // Fallback to local file if env var is not set (for local dev)
+        const localCookiePath = path.join(process.cwd(), 'cookies.txt')
+        if (fs.existsSync(localCookiePath)) {
+          cookiePath = localCookiePath
+          console.log('Using local cookies.txt')
+        }
+      }
 
       // Use yt-dlp to dump json with subtitles
       // We use the --skip-download flag to only get metadata
       // --write-subs and --write-auto-subs to get subtitles
       // --sub-lang to specify language
 
-      const output = await youtubedl(
-        `https://www.youtube.com/watch?v=${videoId}`,
-        {
-          dumpSingleJson: true,
-          skipDownload: true,
-          writeSub: true,
-          writeAutoSub: true,
-          subLang: lang,
-          noWarnings: true,
+      const url = `https://www.youtube.com/watch?v=${videoId}`
+      const options: any = {
+        dumpSingleJson: true,
+        noWarnings: true,
+        noCheckCertificates: true,
+        preferFreeFormats: true,
+        skipDownload: true,
+        writeSub: true,
+        writeAutoSub: true,
+        subLang: lang,
+      }
+
+      if (cookiePath) {
+        options.cookies = cookiePath
+      }
+
+      const output = await youtubedl(url, options)
+
+      // Clean up temp cookie file
+      if (cookiePath && cookiePath.startsWith(os.tmpdir())) {
+        try {
+          fs.unlinkSync(cookiePath)
+        } catch (e) {
+          console.error('Error cleaning up temp cookie file:', e)
         }
-      )
+      }
 
       // Check if requested language is available in subtitles
       let subtitles = output.subtitles?.[lang] || output.automatic_captions?.[lang]

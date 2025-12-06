@@ -28,11 +28,6 @@ yarn-error.log*
 .env*.local
 .env
 
-# sensitive files
-cookies.txt
-*.txt
-!README.txt
-
 # vercel
 .vercel
 
