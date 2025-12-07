@@ -50,18 +50,26 @@ export default function Home() {
   const [error, setError] = useState<string>('')
   const [language, setLanguage] = useState('en')
   const [format, setFormat] = useState<FormatType>('text')
-  const [darkMode, setDarkMode] = useState(false)
+  const [darkMode, setDarkMode] = useState(true)
   const [availableLanguages, setAvailableLanguages] = useState<AvailableLanguage[]>([])
   const [loadingLanguages, setLoadingLanguages] = useState(false)
 
   const textareaRef = useRef<HTMLTextAreaElement>(null)
 
   // Handle dark mode
+  // Handle dark mode
   useEffect(() => {
-    const isDark = localStorage.getItem('darkMode') === 'true'
+    // Check if user has a preference saved
+    const savedMode = localStorage.getItem('darkMode')
+
+    // If saved, use that. If not, default to true (dark mode)
+    const isDark = savedMode === null ? true : savedMode === 'true'
+
     setDarkMode(isDark)
     if (isDark) {
       document.documentElement.classList.add('dark')
+    } else {
+      document.documentElement.classList.remove('dark')
     }
   }, [])
 
@@ -289,9 +297,9 @@ export default function Home() {
       <header className="sticky top-0 z-50 w-full border-b bg-white/80 dark:bg-gray-900/80 backdrop-blur-sm">
         <div className="container mx-auto px-4 py-4 flex items-center justify-between">
           <div className="flex items-center gap-2">
-            <Youtube className="h-6 w-6 text-red-600" />
-            <h1 className="text-xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
-              YouTube Transcript
+            <Youtube className="h-6 w-6 text-[#B38728]" />
+            <h1 className="text-xl font-bold bg-gradient-to-r from-[#BF953F] via-[#D4AF37] to-[#B38728] bg-clip-text text-transparent drop-shadow-sm">
+              Limitless Knowledge Getter
             </h1>
           </div>
           <Button
@@ -313,10 +321,13 @@ export default function Home() {
       <main className="container mx-auto px-4 py-8 max-w-4xl">
         {/* Hero Section */}
         <div className="text-center mb-8 space-y-4">
-          <h2 className="text-4xl md:text-5xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
-            Get YouTube Video Transcripts
-          </h2>
-          <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
+          <div className="flex flex-col items-center justify-center gap-3">
+            <h2 className="text-2xl sm:text-3xl md:text-5xl flex items-center justify-center gap-2 md:gap-3 font-bold bg-gradient-to-r from-[#BF953F] via-[#D4AF37] to-[#B38728] bg-clip-text text-transparent drop-shadow-sm text-center">
+              <Youtube className="h-8 w-8 sm:h-10 sm:w-10 md:h-12 md:w-12 text-red-500 flex-shrink-0" />
+              Get YouTube Video Transcripts
+            </h2>
+          </div>
+          <p className="text-base sm:text-lg md:text-xl text-muted-foreground max-w-2xl mx-auto">
             Extract subtitles and transcripts from YouTube videos instantly.
             Support multiple languages and export formats.
           </p>
@@ -343,7 +354,7 @@ export default function Home() {
                 <Button
                   onClick={handleFetchTranscript}
                   disabled={state === 'loading' || !url.trim()}
-                  className="absolute right-2 top-2 h-10 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700"
+                  className="absolute right-2 top-2 h-10 bg-gradient-to-r from-[#BF953F] via-[#D4AF37] to-[#B38728] hover:opacity-90 text-white font-medium shadow-md"
                 >
                   {state === 'loading' ? (
                     <>
@@ -351,7 +362,7 @@ export default function Home() {
                       Loading...
                     </>
                   ) : (
-                    'Get Transcript'
+                    'Get Language'
                   )}
                 </Button>
               </div>
@@ -359,123 +370,119 @@ export default function Home() {
           </CardContent>
         </Card>
 
-        {/* Options Bar - Always show when videoId exists */}
-        {videoId && (
-          <Card className="mb-6 shadow-lg">
-            <CardContent className="pt-6">
-              <div className="flex flex-col sm:flex-row gap-4">
-                <div className="flex-1">
-                  <div className="flex items-center justify-between mb-2">
-                    <label className="text-sm font-medium">
-                      Language
-                    </label>
-                    {loadingLanguages ? (
-                      <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                        <Loader2 className="h-3 w-3 animate-spin" />
-                        <span>Loading languages...</span>
-                      </div>
-                    ) : availableLanguages.length > 0 ? (
-                      <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                        <Languages className="h-3 w-3" />
-                        <span>{availableLanguages.length} available</span>
-                      </div>
-                    ) : null}
-                  </div>
-                  <Select
-                    value={language}
-                    onValueChange={setLanguage}
-                    disabled={state === 'loading' || loadingLanguages}
-                  >
-                    <SelectTrigger>
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {availableLanguages.length > 0 ? (
-                        // Show only available languages (already deduplicated)
-                        availableLanguages.map((lang, index) => (
-                          <SelectItem
-                            key={`${lang.languageCode}-${index}`}
-                            value={lang.languageCode}
-                          >
-                            <div className="flex items-center gap-2">
-                              <span>{lang.languageName}</span>
-                              {lang.isAutoGenerated && (
-                                <span className="text-xs text-muted-foreground">
-                                  (Auto)
-                                </span>
-                              )}
-                            </div>
-                          </SelectItem>
-                        ))
-                      ) : (
-                        // Fallback to supported languages if available languages not loaded
-                        SUPPORTED_LANGUAGES.map((lang) => (
-                          <SelectItem key={lang.value} value={lang.value}>
-                            {lang.label}
-                          </SelectItem>
-                        ))
-                      )}
-                    </SelectContent>
-                  </Select>
-                  {availableLanguages.length > 0 && (
-                    <button
-                      onClick={() => videoId && fetchAvailableLanguages(videoId)}
-                      disabled={loadingLanguages}
-                      className="mt-2 text-xs text-muted-foreground hover:text-foreground flex items-center gap-1 transition-colors"
-                    >
-                      <RefreshCw
-                        className={`h-3 w-3 ${loadingLanguages ? 'animate-spin' : ''}`}
-                      />
-                      Refresh languages
-                    </button>
-                  )}
-                </div>
-                <div className="flex-1">
-                  <label className="text-sm font-medium mb-2 block">
-                    Format
+        {/* Options Bar - Always show */}
+        <Card className="mb-6 shadow-lg">
+          <CardContent className="pt-6">
+            <div className="flex flex-col sm:flex-row gap-4">
+              <div className="flex-1">
+                <div className="flex items-center justify-between mb-2">
+                  <label className="text-sm font-medium">
+                    Language
                   </label>
-                  <Tabs value={format} onValueChange={(v) => setFormat(v as FormatType)}>
-                    <TabsList className="w-full">
-                      <TabsTrigger value="text" className="flex-1">
-                        Text
-                      </TabsTrigger>
-                      <TabsTrigger value="srt" className="flex-1">
-                        SRT
-                      </TabsTrigger>
-                      <TabsTrigger value="json" className="flex-1">
-                        JSON
-                      </TabsTrigger>
-                    </TabsList>
-                  </Tabs>
-                  <p className="text-xs text-muted-foreground mt-2">
-                    {format === 'text' && 'Plain text format - all segments joined together'}
-                    {format === 'srt' && 'SubRip subtitle format with timestamps'}
-                    {format === 'json' && 'Raw JSON data with text, duration, and offset'}
-                  </p>
+                  {loadingLanguages ? (
+                    <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                      <Loader2 className="h-3 w-3 animate-spin" />
+                      <span>Loading languages...</span>
+                    </div>
+                  ) : availableLanguages.length > 0 ? (
+                    <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                      <Languages className="h-3 w-3" />
+                      <span>{availableLanguages.length} available</span>
+                    </div>
+                  ) : null}
                 </div>
-              </div>
-              {/* Get Transcript Button - Show when languages are loaded */}
-              {availableLanguages.length > 0 && (
-                <div className="mt-4 flex justify-end">
-                  <Button
-                    onClick={handleGetTranscript}
-                    disabled={state === 'loading' || !language}
-                    className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700"
-                  >
-                    {state === 'loading' ? (
-                      <>
-                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                        Loading transcript...
-                      </>
+                <Select
+                  value={language}
+                  onValueChange={setLanguage}
+                  disabled={state === 'loading' || loadingLanguages}
+                >
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {availableLanguages.length > 0 ? (
+                      // Show only available languages (already deduplicated)
+                      availableLanguages.map((lang, index) => (
+                        <SelectItem
+                          key={`${lang.languageCode}-${index}`}
+                          value={lang.languageCode}
+                        >
+                          <div className="flex items-center gap-2">
+                            <span>{lang.languageName}</span>
+                            {lang.isAutoGenerated && (
+                              <span className="text-xs text-muted-foreground">
+                                (Auto)
+                              </span>
+                            )}
+                          </div>
+                        </SelectItem>
+                      ))
                     ) : (
-                      'Get Transcript'
+                      // Fallback to supported languages if available languages not loaded
+                      SUPPORTED_LANGUAGES.map((lang) => (
+                        <SelectItem key={lang.value} value={lang.value}>
+                          {lang.label}
+                        </SelectItem>
+                      ))
                     )}
-                  </Button>
-                </div>
-              )}
-            </CardContent>
-          </Card>
-        )}
+                  </SelectContent>
+                </Select>
+                {availableLanguages.length > 0 && (
+                  <button
+                    onClick={() => videoId && fetchAvailableLanguages(videoId)}
+                    disabled={loadingLanguages}
+                    className="mt-2 text-xs text-muted-foreground hover:text-foreground flex items-center gap-1 transition-colors"
+                  >
+                    <RefreshCw
+                      className={`h-3 w-3 ${loadingLanguages ? 'animate-spin' : ''}`}
+                    />
+                    Refresh languages
+                  </button>
+                )}
+              </div>
+              <div className="flex-1">
+                <label className="text-sm font-medium mb-2 block">
+                  Format
+                </label>
+                <Tabs value={format} onValueChange={(v) => setFormat(v as FormatType)}>
+                  <TabsList className="w-full">
+                    <TabsTrigger value="text" className="flex-1">
+                      Text
+                    </TabsTrigger>
+                    <TabsTrigger value="srt" className="flex-1">
+                      SRT
+                    </TabsTrigger>
+                    <TabsTrigger value="json" className="flex-1">
+                      JSON
+                    </TabsTrigger>
+                  </TabsList>
+                </Tabs>
+                <p className="text-xs text-muted-foreground mt-2">
+                  {format === 'text' && 'Plain text format - all segments joined together'}
+                  {format === 'srt' && 'SubRip subtitle format with timestamps'}
+                  {format === 'json' && 'Raw JSON data with text, duration, and offset'}
+                </p>
+              </div>
+            </div>
+            {/* Get Transcript Button - Always show */}
+            <div className="mt-4 flex justify-end">
+              <Button
+                onClick={handleGetTranscript}
+                disabled={state === 'loading' || !language || !videoId}
+                className="bg-gradient-to-r from-[#BF953F] via-[#D4AF37] to-[#B38728] hover:opacity-90 text-white font-medium shadow-md"
+              >
+                {state === 'loading' ? (
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    Loading transcript...
+                  </>
+                ) : (
+                  'Get Transcript'
+                )}
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
 
         {/* Result Area */}
         {state === 'loading' && (
