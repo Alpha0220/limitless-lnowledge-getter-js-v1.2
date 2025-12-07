@@ -1,7 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
 import path from 'path'
-import fs from 'fs'
-import os from 'os'
 
 export const dynamic = 'force-dynamic'
 
@@ -34,24 +32,6 @@ export async function GET(request: NextRequest) {
     try {
       console.log(`Fetching transcript for videoId: ${videoId}, language: ${lang} using yt-dlp`)
 
-      // Handle cookies from environment variable
-      let cookiePath: string | undefined = undefined
-      const cookiesContent = process.env.YOUTUBE_COOKIES
-
-      if (cookiesContent) {
-        const tempDir = os.tmpdir()
-        cookiePath = path.join(tempDir, `youtube_cookies_${Date.now()}.txt`)
-        fs.writeFileSync(cookiePath, cookiesContent)
-        console.log('Using cookies from environment variable')
-      } else {
-        // Fallback to local file if env var is not set (for local dev)
-        const localCookiePath = path.join(process.cwd(), 'cookies.txt')
-        if (fs.existsSync(localCookiePath)) {
-          cookiePath = localCookiePath
-          console.log('Using local cookies.txt')
-        }
-      }
-
       // Use yt-dlp to dump json with subtitles
       // We use the --skip-download flag to only get metadata
       // --write-subs and --write-auto-subs to get subtitles
@@ -69,20 +49,7 @@ export async function GET(request: NextRequest) {
         subLang: lang,
       }
 
-      if (cookiePath) {
-        options.cookies = cookiePath
-      }
-
       const output = await youtubedl(url, options)
-
-      // Clean up temp cookie file
-      if (cookiePath && cookiePath.startsWith(os.tmpdir())) {
-        try {
-          fs.unlinkSync(cookiePath)
-        } catch (e) {
-          console.error('Error cleaning up temp cookie file:', e)
-        }
-      }
 
       // Check if requested language is available in subtitles
       let subtitles = output.subtitles?.[lang] || output.automatic_captions?.[lang]
