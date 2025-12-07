@@ -1,6 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server'
+import path from 'path'
+
+export const dynamic = 'force-dynamic'
+
 import { create } from 'youtube-dl-exec'
-const youtubedl = create('/home/buggy/.local/bin/yt-dlp')
+const youtubedl = create(path.join(process.cwd(), 'bin', 'yt-dlp'))
 import { TranscriptResponse, TranscriptError } from '@/lib/types'
 
 export async function GET(request: NextRequest) {
@@ -20,30 +24,32 @@ export async function GET(request: NextRequest) {
     // Validate video ID format (should be 11 characters)
     if (videoId.length !== 11) {
       return NextResponse.json<TranscriptError>(
-        { error: 'Invalid YouTube video ID' },
+        { error: 'Invalid Video ID format' },
         { status: 400 }
       )
     }
 
     try {
-      console.log(`📋 Fetching transcript for videoId: ${videoId}, language: ${lang} using yt-dlp`)
+      console.log(`Fetching transcript for videoId: ${videoId}, language: ${lang} using yt-dlp`)
 
       // Use yt-dlp to dump json with subtitles
       // We use the --skip-download flag to only get metadata
       // --write-subs and --write-auto-subs to get subtitles
       // --sub-lang to specify language
 
-      const output = await youtubedl(
-        `https://www.youtube.com/watch?v=${videoId}`,
-        {
-          dumpSingleJson: true,
-          skipDownload: true,
-          writeSub: true,
-          writeAutoSub: true,
-          subLang: lang,
-          noWarnings: true,
-        }
-      )
+      const url = `https://www.youtube.com/watch?v=${videoId}`
+      const options: any = {
+        dumpSingleJson: true,
+        noWarnings: true,
+        noCheckCertificates: true,
+        preferFreeFormats: true,
+        skipDownload: true,
+        writeSub: true,
+        writeAutoSub: true,
+        subLang: lang,
+      }
+
+      const output = await youtubedl(url, options)
 
       // Check if requested language is available in subtitles
       let subtitles = output.subtitles?.[lang] || output.automatic_captions?.[lang]
